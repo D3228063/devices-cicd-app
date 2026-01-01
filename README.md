@@ -10,7 +10,7 @@ Make a small code change, `git commit`, `git push` and then observe the GitHub A
 
 ### Configuring CI/CD
 
-Single Page Apps (SPAs) must bake env vars in at build time. This means they must be built to target a specific environment and must be rebuilt for different environments. The only env var in this base project is `VITE_API_BASE_URL` which must be set to point at the backend products web service. For the CI/CD build, this env var is currently set in the workflow file.
+Single Page Apps (SPAs) must bake env vars in at build time. This means they must be built to target a specific environment and must be rebuilt for different environments. The only env var in this base project is `VITE_API_BASE_URL` which must be set to point at the backend devices web service. For the CI/CD build, this env var is currently set in the workflow file.
 
 ## Local Setup
 
@@ -50,9 +50,9 @@ npm run build
 
 ```bash
 az storage account create \
-  --name <productappstoragename> \
-  --resource-group <your-resource-group> \
-  --location <permitted-location> \
+  --name deviceappstoragename \
+  --resource-group Device_Service \
+  --location switzerlandnorth \
   --sku Standard_LRS \
   --kind StorageV2
 ```
@@ -61,7 +61,7 @@ az storage account create \
 
 ```bash
 az storage blob service-properties update \
-  --account-name <productappstoragename> \
+  --account-name deviceappstoragename \
   --static-website \
   --index-document index.html \
   --404-document index.html
@@ -75,15 +75,15 @@ npm run build
 
 # publish
 az storage blob upload-batch \
-  --account-name <productappstoragename> \
+  --account-name deviceappstoragename \
   --source ./dist \
   --destination '$web' \
   --overwrite
 
 # get URL
 az storage account show \
-  --name <productappstoragename> \
-  --resource-group <your-resource-group> \
+  --name deviceappstoragename \
+  --resource-group Device_Service \
   --query "primaryEndpoints.web" \
   --output tsv
 ```
@@ -92,9 +92,9 @@ az storage account show \
 
 ```bash
 az functionapp cors add \
-  --name <your-backend-products-func> \
-  --resource-group <your-resource-group> \
-  --allowed-origins https://<app-store-endpoint>
+  --name deviceserviceapp \
+  --resource-group Device_Service \
+  --allowed-origins https://deviceappstoragename.z1.web.core.windows.net
 ```
 
 ## How the project was made
