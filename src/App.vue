@@ -1,9 +1,30 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import AuthGuard from './components/AuthGuard.vue';
+</script>
 
 <template>
-  <RouterView />
+  <AuthGuard>
+    <RouterView />
+  </AuthGuard>
 </template>
 
-<style scoped>
-/* basic app container styling can go here if needed */
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f7fafc;
+}
+
+#app {
+  min-height: 100vh;
+}
 </style>
