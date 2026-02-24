@@ -64,6 +64,15 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
+            ACCOUNT_NAME=$(echo "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" | sed -n 's/.*AccountName=\([^;]*\).*/\1/p')
+            if [ -z "$ACCOUNT_NAME" ]; then
+              echo "::error::Could not parse AccountName from AZURE_STORAGE_CONNECTION_STRING"
+              exit 1
+            fi
+
+            echo "Deploying to storage account: $ACCOUNT_NAME"
+            echo "Website URL: https://$ACCOUNT_NAME.z1.web.core.windows.net/"
+
             az storage blob delete-batch \
               --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
               --source '$web'
@@ -72,4 +81,13 @@ jobs:
               --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
               --destination '$web' \
               --source dist \
+              --content-cache-control "public, max-age=31536000, immutable" \
+              --overwrite true
+
+            az storage blob upload-batch \
+              --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+              --destination '$web' \
+              --source dist \
+              --pattern "*.html" \
+              --content-cache-control "no-cache, no-store, must-revalidate" \
               --overwrite true
