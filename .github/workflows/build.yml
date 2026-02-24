@@ -1,10 +1,10 @@
-name: Build
+name: Build and Deploy to Azure Storage
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -15,11 +15,34 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      VITE_API_BASE_URL: http://localhost:7071/api/
+      VITE_API_BASE_URL: ${{ vars.PROD_VITE_API_BASE_URL }}
+      VITE_AUTH0_DOMAIN: ${{ vars.PROD_VITE_AUTH0_DOMAIN }}
+      VITE_AUTH0_CLIENT_ID: ${{ vars.PROD_VITE_AUTH0_CLIENT_ID }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Validate required variables
+        run: |
+          set -e
+          missing=0
+          for key in VITE_API_BASE_URL VITE_AUTH0_DOMAIN VITE_AUTH0_CLIENT_ID; do
+            value="${!key}"
+            if [ -z "$value" ]; then
+              echo "::error::$key is not set. Configure repository variables before deployment."
+              missing=1
+            fi
+          done
+
+          if [ "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" = "" ]; then
+            echo "::error::AZURE_STORAGE_CONNECTION_STRING is not set. Configure repository secrets before deployment."
+            missing=1
+          fi
+
+          if [ "$missing" -eq 1 ]; then
+            exit 1
+          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -35,3 +58,18 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Deploy to Azure Storage Static Website
+        if: github.event_name != 'pull_request'
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az storage blob delete-batch \
+              --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+              --source '$web'
+
+            az storage blob upload-batch \
+              --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+              --destination '$web' \
+              --source dist \
+              --overwrite true
